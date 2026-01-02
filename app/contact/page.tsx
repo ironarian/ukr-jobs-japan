@@ -1,16 +1,17 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLang } from "@/app/providers";
-import { useState } from "react";
 
 function encodeMailtoValue(value: string) {
-  // mailto любить CRLF для нових рядків
   const crlf = value.replace(/\n/g, "\r\n");
   return encodeURIComponent(crlf);
 }
 
-export default function ContactPage() {
+function ContactInner() {
   const { lang } = useLang();
   const t = (ua: string, jp: string, en: string) =>
     lang === "ua" ? ua : lang === "jp" ? jp : en;
@@ -149,7 +150,7 @@ export default function ContactPage() {
               {copied
                 ? t("Скопійовано", "コピーしました", "Copied")
                 : t(
-                    "Скопіювати адресу пошти",
+                    "Скопіювати email",
                     "メールアドレスをコピー",
                     "Copy email"
                   )}
@@ -158,5 +159,13 @@ export default function ContactPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function ContactPage() {
+  return (
+    <Suspense fallback={null}>
+      <ContactInner />
+    </Suspense>
   );
 }

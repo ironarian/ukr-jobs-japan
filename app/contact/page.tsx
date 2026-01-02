@@ -149,7 +149,7 @@ export default function ContactPage() {
               {copied
                 ? t("Скопійовано", "コピーしました", "Copied")
                 : t(
-                    "Скопіювати адресу пошти",
+                    "Скопіювати email",
                     "メールアドレスをコピー",
                     "Copy email"
                   )}

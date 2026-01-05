@@ -42,10 +42,10 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="grid gap-10">
+    <div className="grid gap-8 md:gap-10">
       {/* Hero */}
-      <section className="rounded-3xl border border-slate-900/20 bg-white p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)] md:p-10">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
+      <section className="rounded-2xl md:rounded-3xl border border-slate-900/20 bg-white p-5 shadow-[0_8px_30px_rgba(0,0,0,0.06)] md:p-8 lg:p-10">
+        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl lg:text-4xl">
           {t(
             "Платформа вакансій у Японії для українців 🌻",
             "日本で働きたいウクライナの方のための求人プラットフォーム 🌻",
@@ -53,7 +53,7 @@ export default function HomePage() {
           )}
         </h1>
 
-        <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-slate-700">
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-700 md:mt-4 md:text-[15px]">
           {t(
             "Зрозумілі умови, короткі описи вакансій і публікація після перевірки адміністратором.",
             "条件が分かりやすく、要点をまとめた求人のみを掲載し、管理者が内容を確認しています。",
@@ -61,35 +61,35 @@ export default function HomePage() {
           )}
         </p>
 
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-5 flex flex-wrap gap-2 md:mt-6 md:gap-3">
           <Link
             href="/jobs"
-            className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white shadow-[0_10px_30px_rgba(0,0,0,0.12)] transition hover:bg-slate-800"
+            className="rounded-2xl bg-slate-900 px-4 py-2.5 text-[13px] font-medium text-white shadow-[0_10px_30px_rgba(0,0,0,0.12)] transition hover:bg-slate-800 md:px-5 md:py-3 md:text-sm"
           >
             {t("Перейти до вакансій", "求人を見る", "View jobs")}
           </Link>
 
           <Link
             href="/about"
-            className="rounded-2xl border border-slate-900/20 bg-white px-5 py-3 text-sm font-medium text-slate-900 shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition hover:bg-slate-50"
+            className="rounded-2xl border border-slate-900/20 bg-white px-4 py-2.5 text-[13px] font-medium text-slate-900 shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition hover:bg-slate-50 md:px-5 md:py-3 md:text-sm"
           >
             {t("Про нас", "私たちについて", "About")}
           </Link>
 
           <Link
             href="/contact"
-            className="rounded-2xl border border-slate-900/20 bg-white px-5 py-3 text-sm font-medium text-slate-900 shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition hover:bg-slate-50"
+            className="rounded-2xl border border-slate-900/20 bg-white px-4 py-2.5 text-[13px] font-medium text-slate-900 shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition hover:bg-slate-50 md:px-5 md:py-3 md:text-sm"
           >
             {t("Контакти", "お問い合わせ", "Contact")}
           </Link>
         </div>
 
         {/* Tags */}
-        <div className="mt-6 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-1.5 md:mt-6 md:gap-2">
           {tags.map((tag) => (
             <span
               key={tag}
-              className="rounded-full border border-slate-900/15 bg-white px-3 py-1 text-xs font-medium text-slate-800 shadow-[0_8px_30px_rgba(0,0,0,0.03)]"
+              className="rounded-full border border-slate-900/15 bg-white px-3 py-1 text-[11px] font-medium text-slate-800 shadow-[0_8px_30px_rgba(0,0,0,0.03)] md:text-xs"
             >
               {tag}
             </span>
@@ -98,14 +98,16 @@ export default function HomePage() {
       </section>
 
       {/* Cards */}
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-3 md:grid-cols-3 md:gap-4">
         {cards.map((c) => (
           <div
             key={c.title}
-            className="rounded-3xl border border-slate-900/20 bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
+            className="rounded-2xl md:rounded-3xl border border-slate-900/20 bg-white p-5 shadow-[0_8px_30px_rgba(0,0,0,0.06)] md:p-6"
           >
-            <h3 className="text-[15px] font-bold text-slate-900">{c.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-slate-700">
+            <h3 className="text-sm font-bold text-slate-900 md:text-[15px]">
+              {c.title}
+            </h3>
+            <p className="mt-2 text-[13px] leading-relaxed text-slate-700 md:text-sm">
               {c.text}
             </p>
           </div>
@@ -113,8 +115,8 @@ export default function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="rounded-3xl border border-slate-900/20 bg-white p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
-        <h2 className="text-base font-bold text-slate-900">
+      <section className="rounded-2xl md:rounded-3xl border border-slate-900/20 bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] md:p-8">
+        <h2 className="text-sm font-bold text-slate-900 md:text-base">
           {t(
             "Почніть з фільтрів — так зручніше 🌻",
             "まずは条件で絞り込むのがおすすめです 🌻",
@@ -122,7 +124,7 @@ export default function HomePage() {
           )}
         </h2>
 
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-700">
+        <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-slate-700 md:text-sm">
           {t(
             "На сторінці вакансій можна відфільтрувати вакансії за типом роботи, рівнем японської та тривалістю.",
             "求人一覧ページでは「雇用形態」「日本語レベル」「期間」で絞り込みができます。",
@@ -130,10 +132,10 @@ export default function HomePage() {
           )}
         </p>
 
-        <div className="mt-5">
+        <div className="mt-4 md:mt-5">
           <Link
             href="/jobs"
-            className="inline-flex rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white shadow-[0_10px_30px_rgba(0,0,0,0.12)] transition hover:bg-slate-800"
+            className="inline-flex rounded-2xl bg-slate-900 px-4 py-2.5 text-[13px] font-medium text-white shadow-[0_10px_30px_rgba(0,0,0,0.12)] transition hover:bg-slate-800 md:px-5 md:py-3 md:text-sm"
           >
             {t("Відкрити вакансії", "求人一覧へ", "Open jobs")}
           </Link>

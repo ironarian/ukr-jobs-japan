@@ -168,7 +168,13 @@ export default function JobsClient({ jobs }: { jobs: Job[] }) {
   return (
     <div className="grid gap-8">
       {/* Filters */}
-      <section className="sticky top-[72px] z-10 rounded-3xl border border-slate-900/20 bg-white/85 p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] backdrop-blur-xl">
+      <section
+        className="
+          rounded-3xl border border-slate-900/20 bg-white p-6 
+          shadow-[0_8px_30px_rgba(0,0,0,0.06)]
+          md:sticky md:top-[72px] md:z-10 md:bg-white/85 md:backdrop-blur-xl
+        "
+      >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">

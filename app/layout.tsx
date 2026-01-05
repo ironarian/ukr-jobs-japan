@@ -72,7 +72,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="min-h-screen flex flex-col">
             <Header />
 
-            <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-12">
+            {/* трохи менші відступи на мобілці, як було на десктопі */}
+            <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-10 md:py-12">
               {children}
             </main>
 

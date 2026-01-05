@@ -80,11 +80,34 @@ function ContactInner() {
 
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(email);
+      // 1) сучасні браузери + деякі мобільні
+      if (navigator && "clipboard" in navigator && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(email);
+      } else {
+        // 2) fallback для iOS Safari та інших
+        const textarea = document.createElement("textarea");
+        textarea.value = email;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        textarea.style.pointerEvents = "none";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (e) {
       console.error("Clipboard error", e);
+      alert(
+        t(
+          "Не вдалося скопіювати автоматично. Спробуйте виділити адресу й скопіювати вручну.",
+          "自動コピーに失敗しました。アドレスを選択して手動でコピーしてください。",
+          "Couldn’t copy automatically. Please select the address and copy it manually."
+        )
+      );
     }
   }
 

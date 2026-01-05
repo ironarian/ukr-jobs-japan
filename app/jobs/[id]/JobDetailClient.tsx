@@ -161,7 +161,7 @@ export default function JobDetailClient({ job }: { job: Job }) {
     <div className="grid gap-8">
       {/* Main card */}
       <section className="rounded-3xl border border-slate-900/20 bg-white p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
               {title}
@@ -174,14 +174,15 @@ export default function JobDetailClient({ job }: { job: Job }) {
             </p>
           </div>
 
-          <div className="flex flex-col items-end gap-2">
+          {/* Кнопка: на мобілці широка, на десктопі нормальна справа */}
+          <div className="flex flex-col gap-2 sm:items-end">
             <a
               href={mailto}
-              className="inline-flex rounded-2xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+              className="inline-flex w-full justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_30px_rgba(0,0,0,0.12)] hover:bg-slate-800 sm:w-auto"
             >
               {t("Надіслати повідомлення", "メール送信", "Send message")}
             </a>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[11px] text-slate-500 max-w-xs sm:text-right">
               {t(
                 "Лист піде до центру, який передасть інформацію роботодавцю.",
                 "メールはセンターに届き、その後企業に共有されます。",

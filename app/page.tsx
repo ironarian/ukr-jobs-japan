@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useLang } from "@/app/providers";
 
 export default function HomePage() {
-  const { lang } = useLang();
+  const { lang, ready } = useLang();
+  if (!ready) return null;
+
   const t = (ua: string, jp: string, en: string) =>
     lang === "ua" ? ua : lang === "jp" ? jp : en;
 

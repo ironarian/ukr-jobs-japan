@@ -1,47 +1,34 @@
+// app/components/LanguageSwitcher.tsx
 "use client";
 
-import { useLang, type Lang } from "@/app/providers";
+import { useLang } from "@/app/providers";
 
-const items: { value: Lang; label: string; aria: string }[] = [
-  { value: "ua", label: "UA", aria: "Українська мова" },
-  { value: "jp", label: "JP", aria: "日本語" },
-  { value: "en", label: "EN", aria: "English" },
-];
+type Lang = "ua" | "jp" | "en";
 
 export default function LanguageSwitcher() {
-  const { lang, setLang } = useLang();
+  const { lang, setLang } = useLang() as {
+    lang: Lang;
+    setLang: (l: Lang) => void;
+  };
 
   return (
-    <div
-      className="
-        inline-flex items-center rounded-2xl border border-slate-900/15
-        bg-white/70 p-1 shadow-[0_8px_30px_rgba(0,0,0,0.06)]
-        backdrop-blur supports-[backdrop-filter]:backdrop-blur-md
-      "
-      role="radiogroup"
-      aria-label="Language selection"
-    >
-      {items.map((it) => {
-        const active = it.value === lang;
+    <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+      {(["ua", "jp", "en"] as Lang[]).map((l) => {
+        const active = lang === l;
 
         return (
           <button
-            key={it.value}
+            key={l}
             type="button"
-            role="radio"
-            aria-checked={active}
-            aria-label={it.aria}
-            onClick={() => setLang(it.value)}
-            className={`
-              rounded-xl px-3 py-1.5 text-xs font-semibold transition-all
-              focus:outline-none focus-visible:ring-2
-              focus-visible:ring-slate-900/25 focus-visible:ring-offset-2
-              ${active
-                ? "bg-slate-900 text-white shadow-[0_8px_18px_rgba(0,0,0,0.16)]"
-                : "text-slate-700 hover:bg-slate-100 active:bg-slate-200"}
-            `}
+            onClick={() => setLang(l)}
+            className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+              active
+                ? "bg-slate-900 text-white"
+                : "text-slate-700 hover:bg-slate-50"
+            }`}
+            aria-pressed={active}
           >
-            {it.label}
+            {l.toUpperCase()}
           </button>
         );
       })}

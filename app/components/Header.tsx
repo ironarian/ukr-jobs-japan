@@ -13,6 +13,9 @@ export default function Header() {
   const { lang } = useLang();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // ✅ чи залогінений адмін (через /api/admin/me)
+  const [isAdmin, setIsAdmin] = useState(false);
+
   const t = (ua: string, jp: string, en: string) =>
     lang === "ua" ? ua : lang === "jp" ? jp : en;
 
@@ -27,12 +30,10 @@ export default function Header() {
 
   const isActive = (href: string) => pathname === href;
 
-  // закриваємо мобільне меню при зміні маршруту
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
 
-  // закривати по ESC
   useEffect(() => {
     if (!mobileOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -42,13 +43,35 @@ export default function Header() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [mobileOpen]);
 
+  // ✅ перевірка адміна (httpOnly cookie)
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkAdmin() {
+      try {
+        const res = await fetch("/api/admin/me", {
+          method: "GET",
+          cache: "no-store",
+          credentials: "include",
+        });
+        const data = await res.json().catch(() => ({ ok: false }));
+        if (!cancelled) setIsAdmin(Boolean(data?.ok));
+      } catch {
+        if (!cancelled) setIsAdmin(false);
+      }
+    }
+
+    void checkAdmin();
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+
   return (
     <header className="sticky top-0 z-30">
-      {/* верхня панель */}
       <div className="relative border-b border-slate-200/70 bg-white/92 shadow-[0_10px_30px_rgba(0,0,0,0.06)] backdrop-blur-xl">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/70" />
 
-        {/* на мобілці — звичайний flex, на десктопі — grid з 3 колонок */}
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2.5 md:grid md:grid-cols-3 md:py-4">
           {/* LEFT — Logo */}
           <Link href="/" className="flex items-center gap-3 group">
@@ -71,7 +94,6 @@ export default function Header() {
               <span className="text-base font-extrabold tracking-tight text-slate-900 md:text-lg">
                 UKRJobsJapan <span className="ml-1">🌻</span>
               </span>
-              {/* підзаголовок приховую на дуже малих екранах, щоб не тиснувся */}
               <span className="hidden text-[11px] font-medium text-slate-500 sm:inline">
                 {t(
                   "Вакансії в Японії для українців",
@@ -82,7 +104,7 @@ export default function Header() {
             </span>
           </Link>
 
-          {/* CENTER — Nav (desktop only) */}
+          {/* CENTER — Nav (desktop) */}
           <nav className="hidden justify-center gap-8 md:flex">
             {nav.map((item) => {
               const active = isActive(item.href);
@@ -105,28 +127,30 @@ export default function Header() {
                     className={[
                       "absolute -bottom-1 left-0 h-[2px] w-full origin-left rounded-full bg-slate-900",
                       "transition-transform duration-300",
-                      active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100",
+                      active
+                        ? "scale-x-100"
+                        : "scale-x-0 group-hover:scale-x-100",
                     ].join(" ")}
-                  />
-                  <span
-                    className={[
-                      "pointer-events-none absolute -inset-x-2 -inset-y-1 rounded-xl",
-                      "opacity-0 group-hover:opacity-100",
-                      "transition-opacity duration-300",
-                      "bg-gradient-to-r from-transparent via-slate-900/5 to-transparent",
-                    ].join(" ")}
-                    aria-hidden="true"
                   />
                 </Link>
               );
             })}
           </nav>
 
-          {/* RIGHT — language + menu button */}
+          {/* RIGHT — language + Admin + menu */}
           <div className="flex items-center gap-2 md:justify-end">
+            {/* ✅ Admin видно тільки залогіненому */}
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="hidden rounded-2xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-700 md:inline-flex"
+              >
+                Admin
+              </Link>
+            )}
+
             <LanguageSwitcher />
 
-            {/* Mobile menu button (тільки до md) */}
             <button
               type="button"
               className="inline-flex items-center justify-center rounded-2xl border border-slate-900/15 bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition hover:bg-slate-50 md:hidden"
@@ -177,6 +201,17 @@ export default function Header() {
                     </Link>
                   );
                 })}
+
+                {/* ✅ Admin у мобільному меню */}
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="mt-1 flex items-center justify-between rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white"
+                  >
+                    <span>Admin</span>
+                    <span aria-hidden="true">⚙️</span>
+                  </Link>
+                )}
               </div>
             </div>
           </div>

@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // URL не пишемо тут — він у prisma.config.ts / .env
+}
+
+model Job {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  // --- КОМПАНІЯ / ЗАКЛАД ---
+  companyNameJp String        // ココロゴトカフェ
+  companyNameUa String?       // Кокорогото кафе
+  companyNameEn String?       // Cocorogoto cafe
+
+  // --- ТИП ЗАКЛАДУ (код) ---
+  // CAFE_RESTAURANT / IT_COMPANY / OFFICE / CARE_FACILITY / RETAIL_SHOP / HOTEL / OTHER
+  facilityType      String
+  facilityTypeNoteJp String?  // додаткове пояснення JP (опційно)
+  facilityTypeNoteUa String?  // UA
+  facilityTypeNoteEn String?  // EN
+
+  // --- ТИП РОБОТИ / РІВЕНЬ ЯПОНСЬКОЇ / ТРИВАЛІСТЬ ---
+  // employmentType: PART_TIME / FULL_TIME / CONTRACT / INTERNSHIP
+  employmentType String
+
+  // japaneseLevel: NOT_REQUIRED / BASIC / N4 / N3 / N2 / N1
+  japaneseLevel String
+
+  // jobTerm: ONE_DAY / SHORT_TERM / ONE_MONTH / LONG_TERM
+  jobTerm String
+
+  // --- ЗАГОЛОВКИ ---
+  titleJp String
+  titleUa String?
+  titleEn String?
+
+  // --- ЛОКАЦІЯ ---
+  locationJp String
+  locationUa String?
+  locationEn String?
+
+  // --- ЗАРПЛАТА ---
+  salaryFrom     Int?
+  salaryTo       Int?
+  salaryCurrency String?  // JPY за замовчуванням зі сторони коду
+
+  // --- КОРОТКИЙ ОПИС (картка вакансії) ---
+  shortJp String
+  shortUa String?
+  shortEn String?
+
+  // --- ПОВНИЙ ОПИС ---
+  descriptionJp String
+  descriptionUa String?
+  descriptionEn String?
+
+  // --- МЕТА ---
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  published Boolean  @default(true)
+}

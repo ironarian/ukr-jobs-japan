@@ -4,18 +4,52 @@ import { Providers } from "./providers";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_APP_URL?.startsWith("http")
+    ? process.env.NEXT_PUBLIC_APP_URL
+    : "http://localhost:3000";
+
 export const metadata: Metadata = {
-  title: "UKRJobsJapan",
+  title: {
+    default: "UKRJobsJapan",
+    template: "%s | UKRJobsJapan",
+  },
   description: "Connect Ukrainians in Japan with trusted employers.",
+
+  // ✅ Мінімальне SEO
+  metadataBase: new URL(siteUrl),
+  alternates: { canonical: "/" },
+  robots: { index: true, follow: true },
+
+  // ✅ OpenGraph (превʼю для соцмереж)
+  openGraph: {
+    title: "UKRJobsJapan",
+    description: "Connect Ukrainians in Japan with trusted employers.",
+    url: "/",
+    siteName: "UKRJobsJapan",
+    type: "website",
+  },
+
+  // (опційно, але корисно)
+  twitter: {
+    card: "summary_large_image",
+    title: "UKRJobsJapan",
+    description: "Connect Ukrainians in Japan with trusted employers.",
+  },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <body className="min-h-screen text-slate-900 antialiased">
         <Providers>
           {/* Background */}
           <div className="gentle-bg fixed inset-0 -z-10" />
+
           <style>{`
             .gentle-bg {
               background:
@@ -64,19 +98,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }
 
             @media (prefers-reduced-motion: reduce) {
-              .gentle-bg { animation: none; }
+              .gentle-bg {
+                animation: none;
+              }
             }
           `}</style>
 
           {/* App frame */}
           <div className="min-h-screen flex flex-col">
             <Header />
-
-            {/* трохи менші відступи на мобілці, як було на десктопі */}
             <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-10 md:py-12">
               {children}
             </main>
-
             <Footer />
           </div>
         </Providers>

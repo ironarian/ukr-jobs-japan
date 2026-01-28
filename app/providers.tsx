@@ -7,24 +7,33 @@ export type Lang = "ua" | "jp" | "en";
 type LangContextValue = {
   lang: Lang;
   setLang: (l: Lang) => void;
+  ready: boolean;
 };
 
 const LangContext = createContext<LangContextValue | null>(null);
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  // важливо: початкове значення не має "скакати" між SSR і клієнтом
   const [lang, setLangState] = useState<Lang>("ua");
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const saved = typeof window !== "undefined" ? window.localStorage.getItem("lang") : null;
-    if (saved === "ua" || saved === "jp" || saved === "en") setLangState(saved);
+    try {
+      const saved = window.localStorage.getItem("lang");
+      if (saved === "ua" || saved === "jp" || saved === "en") {
+        setLangState(saved);
+      }
+    } finally {
+      setReady(true);
+    }
   }, []);
 
   const setLang = (l: Lang) => {
     setLangState(l);
-    if (typeof window !== "undefined") window.localStorage.setItem("lang", l);
+    window.localStorage.setItem("lang", l);
   };
 
-  const value = useMemo(() => ({ lang, setLang }), [lang]);
+  const value = useMemo(() => ({ lang, setLang, ready }), [lang, ready]);
 
   return <LangContext.Provider value={value}>{children}</LangContext.Provider>;
 }

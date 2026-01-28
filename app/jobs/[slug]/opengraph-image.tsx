@@ -1,8 +1,9 @@
 // app/jobs/[slug]/opengraph-image.tsx
 import { ImageResponse } from "next/og";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
-export const runtime = "edge";
+export const runtime = "nodejs"; // prisma/pg потребує Node runtime
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -38,6 +39,11 @@ export default async function OpenGraphImage({
 }) {
   const slug = decodeURIComponent(params.slug);
 
+  // ✅ Next.js 15: headers() може бути async, тому await
+  const h = await headers();
+  const cookieHeader = h.get("cookie");
+  const lang = detectLangFromCookie(cookieHeader);
+
   const job = await prisma.job.findUnique({
     where: { slug },
     select: {
@@ -57,27 +63,33 @@ export default async function OpenGraphImage({
     },
   });
 
-  // якщо нема — робимо нейтральну картинку
-  const cookieHeader =
-    typeof (globalThis as any).headers?.get === "function"
-      ? (globalThis as any).headers.get("cookie")
-      : null;
+  // Якщо нема вакансії або вона не опублікована — нейтральна картинка
+  const isVisible = !!job && job.published;
 
-  const lang = detectLangFromCookie(cookieHeader);
+  const title = isVisible
+    ? pickLang(lang, job!.titleUa, job!.titleJp, job!.titleEn)
+    : "Job";
 
-  const title = job ? pickLang(lang, job.titleUa, job.titleJp, job.titleEn) : "Job";
-  const company = job
-    ? pickLang(lang, job.companyNameUa, job.companyNameJp, job.companyNameEn)
+  const company = isVisible
+    ? pickLang(
+        lang,
+        job!.companyNameUa,
+        job!.companyNameJp,
+        job!.companyNameEn
+      )
     : "Company";
-  const location = job
-    ? pickLang(lang, job.locationUa, job.locationJp, job.locationEn)
+
+  const location = isVisible
+    ? pickLang(lang, job!.locationUa, job!.locationJp, job!.locationEn)
     : "";
 
   const pay =
-    job && typeof job.salaryFrom === "number"
-      ? `${job.salaryCurrency ?? "JPY"} ${job.salaryFrom.toLocaleString("ja-JP")}${
-          typeof job.salaryTo === "number"
-            ? `–${job.salaryTo.toLocaleString("ja-JP")}`
+    isVisible && typeof job!.salaryFrom === "number"
+      ? `${job!.salaryCurrency ?? "JPY"} ${job!.salaryFrom.toLocaleString(
+          "ja-JP"
+        )}${
+          typeof job!.salaryTo === "number"
+            ? `–${job!.salaryTo.toLocaleString("ja-JP")}`
             : "〜"
         }`
       : "";
@@ -113,13 +125,7 @@ export default async function OpenGraphImage({
             boxShadow: "0 30px 90px rgba(0,0,0,0.35)",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              alignItems: "center",
-            }}
-          >
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <div
               style={{
                 padding: "10px 16px",
@@ -174,16 +180,12 @@ export default async function OpenGraphImage({
             <div style={{ fontSize: 28, color: "#334155", fontWeight: 700 }}>
               {company}
             </div>
-            <div style={{ fontSize: 22, color: "#475569" }}>
-              {location}
-            </div>
+            <div style={{ fontSize: 22, color: "#475569" }}>{location}</div>
           </div>
 
           <div style={{ flex: 1 }} />
 
-          <div style={{ fontSize: 18, color: "#64748b" }}>
-            /jobs/{slug}
-          </div>
+          <div style={{ fontSize: 18, color: "#64748b" }}>/jobs/{slug}</div>
         </div>
       </div>
     ),

@@ -1,30 +1,30 @@
-// app/api/admin/jobs/[id]/publish/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-type Ctx = { params: { id: string } };
+export async function PATCH(
+  req: Request,
+  ctx: { params: Promise<{ id: string }> }
+) {
+  const { id } = await ctx.params;
 
-export async function PATCH(req: Request, { params }: Ctx) {
+  const body = await req.json().catch(() => ({}));
+  const published = Boolean((body as any)?.published);
+
   try {
-    const body = await req.json().catch(() => ({} as any));
-    const published = Boolean(body?.published);
-
     const updated = await prisma.job.update({
-      where: { id: params.id },
+      where: { id },
       data: { published },
       select: { id: true, published: true },
     });
 
     return NextResponse.json(updated);
   } catch (e: any) {
-    // prisma throws if not found
     const msg = typeof e?.message === "string" ? e.message : "Error";
     const status = msg.toLowerCase().includes("record") ? 404 : 500;
     return NextResponse.json({ error: msg }, { status });
   }
 }
 
-// (опціонально) якщо десь ще викликаєш POST — залиш як alias:
-export async function POST(req: Request, ctx: Ctx) {
+export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   return PATCH(req, ctx);
 }

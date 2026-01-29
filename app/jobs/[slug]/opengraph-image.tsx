@@ -1,9 +1,7 @@
-// app/jobs/[slug]/opengraph-image.tsx
 import { ImageResponse } from "next/og";
 import { headers } from "next/headers";
-import { prisma } from "@/lib/prisma";
 
-export const runtime = "nodejs"; // prisma/pg потребує Node runtime
+export const runtime = "edge";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -39,63 +37,43 @@ export default async function OpenGraphImage({
 }) {
   const slug = decodeURIComponent(params.slug);
 
-  // ✅ Next.js 15: headers() може бути async, тому await
   const h = await headers();
   const cookieHeader = h.get("cookie");
   const lang = detectLangFromCookie(cookieHeader);
 
-  const job = await prisma.job.findUnique({
-    where: { slug },
-    select: {
-      published: true,
-      titleUa: true,
-      titleJp: true,
-      titleEn: true,
-      companyNameUa: true,
-      companyNameJp: true,
-      companyNameEn: true,
-      locationUa: true,
-      locationJp: true,
-      locationEn: true,
-      salaryFrom: true,
-      salaryTo: true,
-      salaryCurrency: true,
-    },
-  });
+  // ВАЖЛИВО: потрібен абсолютний URL у проді
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  const proto = h.get("x-forwarded-proto") ?? "https";
+  const baseUrl = host ? `${proto}://${host}` : "";
 
-  // Якщо нема вакансії або вона не опублікована — нейтральна картинка
-  const isVisible = !!job && job.published;
+  let job: any = null;
+  try {
+    const res = await fetch(`${baseUrl}/api/og/job?slug=${encodeURIComponent(slug)}`, {
+      // щоб не кешувало “не те”
+      cache: "no-store",
+    });
+    const data = await res.json();
+    job = data?.job ?? null;
+  } catch {
+    job = null;
+  }
 
-  const title = isVisible
-    ? pickLang(lang, job!.titleUa, job!.titleJp, job!.titleEn)
-    : "Job";
+  const isVisible = !!job;
 
+  const title = isVisible ? pickLang(lang, job.titleUa, job.titleJp, job.titleEn) : "Job";
   const company = isVisible
-    ? pickLang(
-        lang,
-        job!.companyNameUa,
-        job!.companyNameJp,
-        job!.companyNameEn
-      )
+    ? pickLang(lang, job.companyNameUa, job.companyNameJp, job.companyNameEn)
     : "Company";
-
-  const location = isVisible
-    ? pickLang(lang, job!.locationUa, job!.locationJp, job!.locationEn)
-    : "";
+  const location = isVisible ? pickLang(lang, job.locationUa, job.locationJp, job.locationEn) : "";
 
   const pay =
-    isVisible && typeof job!.salaryFrom === "number"
-      ? `${job!.salaryCurrency ?? "JPY"} ${job!.salaryFrom.toLocaleString(
-          "ja-JP"
-        )}${
-          typeof job!.salaryTo === "number"
-            ? `–${job!.salaryTo.toLocaleString("ja-JP")}`
-            : "〜"
+    isVisible && typeof job.salaryFrom === "number"
+      ? `${job.salaryCurrency ?? "JPY"} ${job.salaryFrom.toLocaleString("ja-JP")}${
+          typeof job.salaryTo === "number" ? `–${job.salaryTo.toLocaleString("ja-JP")}` : "〜"
         }`
       : "";
 
-  const badge =
-    lang === "ua" ? "Вакансія" : lang === "jp" ? "求人" : "Job posting";
+  const badge = lang === "ua" ? "Вакансія" : lang === "jp" ? "求人" : "Job posting";
 
   return new ImageResponse(
     (
@@ -169,17 +147,8 @@ export default async function OpenGraphImage({
             {title}
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 10,
-              marginTop: 6,
-            }}
-          >
-            <div style={{ fontSize: 28, color: "#334155", fontWeight: 700 }}>
-              {company}
-            </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 6 }}>
+            <div style={{ fontSize: 28, color: "#334155", fontWeight: 700 }}>{company}</div>
             <div style={{ fontSize: 22, color: "#475569" }}>{location}</div>
           </div>
 

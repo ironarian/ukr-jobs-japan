@@ -51,15 +51,15 @@ function normalizeJobTerm(term: unknown) {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  ctx: { params: Promise<{ id: string }> }
 ) {
   const auth = requireAdmin(req);
   if (!auth.ok) return auth.res;
 
+  const { id } = await ctx.params;
+
   try {
-    const job = await prisma.job.findUnique({
-      where: { id: params.id },
-    });
+    const job = await prisma.job.findUnique({ where: { id } });
 
     if (!job) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -78,16 +78,17 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  ctx: { params: Promise<{ id: string }> }
 ) {
   const auth = requireAdmin(req);
   if (!auth.ok) return auth.res;
+
+  const { id } = await ctx.params;
 
   try {
     const body = await req.json().catch(() => ({}));
     const data: Record<string, any> = { ...body };
 
-    // "" → null
     for (const k of [
       "companyNameUa",
       "companyNameEn",
@@ -108,25 +109,23 @@ export async function PATCH(
       if (k in data) data[k] = normalizeEmptyToNull(data[k]);
     }
 
-    // jobTerm
     if ("jobTerm" in data) {
       data.jobTerm = normalizeJobTerm(data.jobTerm);
     }
 
-    // slug
     if ("slug" in data && data.slug) {
       const base = makeSlug(data.slug);
-      data.slug = await ensureUniqueSlug(params.id, base);
+      data.slug = await ensureUniqueSlug(id, base);
     }
 
     const updated = await prisma.job.update({
-      where: { id: params.id },
+      where: { id },
       data,
     });
 
     revalidatePath("/admin");
     revalidatePath("/admin/jobs");
-    revalidatePath(`/admin/jobs/${params.id}`);
+    revalidatePath(`/admin/jobs/${id}`);
     revalidatePath("/jobs");
     revalidatePath(`/jobs/${updated.slug}`);
 

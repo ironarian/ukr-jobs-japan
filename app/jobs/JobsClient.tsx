@@ -3,28 +3,59 @@
 import Link from "next/link";
 import { useMemo, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { Job } from "@prisma/client";
 import { useLang } from "@/app/providers";
 
 type Lang = "ua" | "jp" | "en";
 
-type JobWithDates = Job & {
-  createdAt: Date | string;
-  updatedAt: Date | string;
-};
-
-type JobsClientProps = {
-  jobs: JobWithDates[];
-};
-
-function useT(lang: Lang) {
-  return (ua: string, jp: string, en: string) =>
-    lang === "ua" ? ua : lang === "jp" ? jp : en;
-}
-
 type EmploymentTypeCode = "PART_TIME" | "FULL_TIME" | "CONTRACT" | "INTERNSHIP";
 type JapaneseLevelCode = "NOT_REQUIRED" | "BASIC" | "N4" | "N3" | "N2" | "N1";
 type JobTermCode = "ONE_DAY" | "SHORT_TERM" | "ONE_MONTH" | "LONG_TERM";
+
+/**
+ * ✅ Клієнтський тип (без Prisma).
+ * Важливо: slug може бути null в БД, тому тут теж допускаємо null,
+ * а коли будуємо URL — робимо fallback "" або фільтруємо.
+ */
+type Job = {
+  id: string;
+  slug?: string | null;
+  published?: boolean | null;
+
+  createdAt: Date | string;
+  updatedAt: Date | string;
+
+  employmentType?: EmploymentTypeCode | null;
+  japaneseLevel?: JapaneseLevelCode | null;
+  jobTerm?: JobTermCode | string | null;
+
+  titleJp?: string | null;
+  titleUa?: string | null;
+  titleEn?: string | null;
+
+  companyNameJp?: string | null;
+  companyNameUa?: string | null;
+  companyNameEn?: string | null;
+
+  locationJp?: string | null;
+  locationUa?: string | null;
+  locationEn?: string | null;
+
+  shortJp?: string | null;
+  shortUa?: string | null;
+  shortEn?: string | null;
+
+  salaryFrom?: number | null;
+  salaryTo?: number | null;
+  salaryCurrency?: string | null;
+};
+
+type JobsClientProps = {
+  jobs: Job[];
+};
+
+function useT(lang: Lang) {
+  return (ua: string, jp: string, en: string) => (lang === "ua" ? ua : lang === "jp" ? jp : en);
+}
 
 const JP_LEVEL_ORDER: JapaneseLevelCode[] = ["NOT_REQUIRED", "BASIC", "N4", "N3", "N2", "N1"];
 
@@ -75,29 +106,28 @@ function formatDate(d: Date | string, lang: Lang) {
   return `${day}.${m}.${y}`;
 }
 
-function getTitle(job: JobWithDates, lang: Lang) {
-  if (lang === "jp") return safe((job as any).titleJp) || safe((job as any).titleEn) || safe((job as any).titleUa);
-  if (lang === "en") return safe((job as any).titleEn) || safe((job as any).titleUa) || safe((job as any).titleJp);
-  return safe((job as any).titleUa) || safe((job as any).titleJp) || safe((job as any).titleEn);
+function getTitle(job: Job, lang: Lang) {
+  if (lang === "jp") return safe(job.titleJp) || safe(job.titleEn) || safe(job.titleUa);
+  if (lang === "en") return safe(job.titleEn) || safe(job.titleUa) || safe(job.titleJp);
+  return safe(job.titleUa) || safe(job.titleJp) || safe(job.titleEn);
 }
 
-function getCompany(job: JobWithDates, lang: Lang) {
-  if (lang === "jp") return safe((job as any).companyNameJp);
-  if (lang === "en")
-    return safe((job as any).companyNameEn) || safe((job as any).companyNameJp) || safe((job as any).companyNameUa);
-  return safe((job as any).companyNameUa) || safe((job as any).companyNameJp);
+function getCompany(job: Job, lang: Lang) {
+  if (lang === "jp") return safe(job.companyNameJp);
+  if (lang === "en") return safe(job.companyNameEn) || safe(job.companyNameJp) || safe(job.companyNameUa);
+  return safe(job.companyNameUa) || safe(job.companyNameJp);
 }
 
-function getLocation(job: JobWithDates, lang: Lang) {
-  if (lang === "jp") return safe((job as any).locationJp);
-  if (lang === "en") return safe((job as any).locationEn) || safe((job as any).locationJp) || safe((job as any).locationUa);
-  return safe((job as any).locationUa) || safe((job as any).locationJp);
+function getLocation(job: Job, lang: Lang) {
+  if (lang === "jp") return safe(job.locationJp);
+  if (lang === "en") return safe(job.locationEn) || safe(job.locationJp) || safe(job.locationUa);
+  return safe(job.locationUa) || safe(job.locationJp);
 }
 
-function getShort(job: JobWithDates, lang: Lang) {
-  if (lang === "jp") return safe((job as any).shortJp);
-  if (lang === "en") return safe((job as any).shortEn) || safe((job as any).shortJp) || safe((job as any).shortUa);
-  return safe((job as any).shortUa) || safe((job as any).shortJp);
+function getShort(job: Job, lang: Lang) {
+  if (lang === "jp") return safe(job.shortJp);
+  if (lang === "en") return safe(job.shortEn) || safe(job.shortJp) || safe(job.shortUa);
+  return safe(job.shortUa) || safe(job.shortJp);
 }
 
 function isEmploymentType(v: string): v is EmploymentTypeCode {
@@ -111,14 +141,7 @@ function isJobTerm(v: string): v is JobTermCode {
 }
 
 /**
- * ✅ Логіка доступності:
- * jobLevel = мінімальний рівень, який вимагає вакансія
- * userLevel = рівень користувача
- * Користувач підходить, якщо userLevel >= jobLevel
- *
- * Приклад:
- * - job N4 -> user N3/N2/N1 підходить
- * - job NOT_REQUIRED -> підходять всі
+ * ✅ eligibility
  */
 function isEligible(userLevel: JapaneseLevelCode, jobLevelRaw: unknown) {
   const jobLevel: JapaneseLevelCode = isJapaneseLevel(String(jobLevelRaw)) ? (jobLevelRaw as JapaneseLevelCode) : "NOT_REQUIRED";
@@ -129,8 +152,8 @@ function isEligible(userLevel: JapaneseLevelCode, jobLevelRaw: unknown) {
 }
 
 export default function JobsClient({ jobs }: JobsClientProps) {
-  const { lang, ready } = useLang();
-  const langCode = (lang as Lang) ?? "en";
+  const { lang, ready } = useLang() as { lang: Lang; ready: boolean };
+  const langCode: Lang = lang ?? "en";
   const t = useT(langCode);
 
   const router = useRouter();
@@ -180,15 +203,15 @@ export default function JobsClient({ jobs }: JobsClientProps) {
   const hasChosenLevel = japaneseLevelFilter !== null;
 
   const filteredJobs = useMemo(() => {
-    if (!hasChosenLevel) return [] as JobWithDates[];
+    if (!hasChosenLevel) return [] as Job[];
 
     const userLevel = japaneseLevelFilter!;
 
     return jobs
-      .filter((job) => Boolean((job as any).published))
-      .filter((job) => (employmentFilter === "ALL" ? true : (job as any).employmentType === employmentFilter))
-      .filter((job) => (termFilter === "ALL" ? true : (job as any).jobTerm === termFilter))
-      .filter((job) => isEligible(userLevel, (job as any).japaneseLevel));
+      .filter((job) => Boolean(job.published))
+      .filter((job) => (employmentFilter === "ALL" ? true : job.employmentType === employmentFilter))
+      .filter((job) => (termFilter === "ALL" ? true : String(job.jobTerm ?? "") === termFilter))
+      .filter((job) => isEligible(userLevel, job.japaneseLevel));
   }, [jobs, employmentFilter, japaneseLevelFilter, termFilter, hasChosenLevel]);
 
   const total = hasChosenLevel ? filteredJobs.length : 0;
@@ -328,7 +351,6 @@ export default function JobsClient({ jobs }: JobsClientProps) {
           </div>
         </section>
 
-        {/* якщо рівень не вибраний */}
         {!hasChosenLevel && (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-[13px] text-amber-900">
             {t(
@@ -339,91 +361,93 @@ export default function JobsClient({ jobs }: JobsClientProps) {
           </div>
         )}
 
-        {/* JOBS */}
         {hasChosenLevel && (
           <section className="grid gap-5 md:grid-cols-2">
-            {filteredJobs.map((job) => {
-              const detailsHref = `/jobs/${encodeURIComponent((job as any).slug)}?back=${encodeURIComponent(backHref)}`;
+            {filteredJobs
+              // ✅ якщо slug нема — не показуємо (інакше лінк буде кривий)
+              .filter((job) => safe(job.slug).length > 0)
+              .map((job) => {
+                const detailsHref = `/jobs/${encodeURIComponent(safe(job.slug))}?back=${encodeURIComponent(backHref)}`;
 
-              const title = getTitle(job, langCode);
-              const company = getCompany(job, langCode);
-              const location = getLocation(job, langCode);
-              const shortText = getShort(job, langCode);
+                const title = getTitle(job, langCode);
+                const company = getCompany(job, langCode);
+                const location = getLocation(job, langCode);
+                const shortText = getShort(job, langCode);
 
-              const jpLevelLabel =
-                JP_LEVEL_OPTIONS.find((x) => x.value === ((job as any).japaneseLevel as JapaneseLevelCode))?.label[langCode] ?? "";
+                const jpLevelLabel =
+                  JP_LEVEL_OPTIONS.find((x) => x.value === (job.japaneseLevel as JapaneseLevelCode))?.label[langCode] ?? "";
 
-              const termLabel =
-                TERM_OPTIONS.find((x) => x.value === (((job as any).jobTerm as JobTermCode) ?? "ALL"))?.label[langCode] ?? "";
+                const termLabel =
+                  TERM_OPTIONS.find((x) => x.value === ((job.jobTerm as JobTermCode) ?? "ALL"))?.label[langCode] ?? "";
 
-              return (
-                <article
-                  key={(job as any).id}
-                  className="group flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_12px_40px_rgba(15,23,42,0.10)] transition hover:-translate-y-[2px] hover:shadow-[0_18px_60px_rgba(15,23,42,0.16)]"
-                >
-                  <div>
-                    <Link href={detailsHref} className="block">
-                      <h2 className="text-[15px] font-semibold leading-snug text-slate-900 underline-offset-4 group-hover:underline">
-                        {title}
-                      </h2>
-                    </Link>
-
-                    <dl className="mt-2 space-y-0.5 text-[13px] text-slate-700">
-                      <div>
-                        <dt className="inline font-medium">{t("Компанія:", "企業名:", "Company:")} </dt>
-                        <dd className="inline">{company}</dd>
-                      </div>
-                      <div>
-                        <dt className="inline font-medium">{t("Локація:", "勤務地:", "Location:")} </dt>
-                        <dd className="inline">{location}</dd>
-                      </div>
-                    </dl>
-
-                    <div className="mt-3 flex flex-wrap gap-1.5 text-[11px]">
-                      <span className="inline-flex items-center rounded-full bg-slate-900 px-2.5 py-1 font-semibold text-white">
-                        JP: {jpLevelLabel}
-                      </span>
-
-                      {termLabel && (
-                        <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-800">
-                          {termLabel}
-                        </span>
-                      )}
-
-                      {typeof (job as any).salaryFrom === "number" && (
-                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">
-                          ¥{Number((job as any).salaryFrom).toLocaleString("ja-JP")}
-                        </span>
-                      )}
-                    </div>
-
-                    {shortText && (
-                      <p className="mt-3 line-clamp-3 text-[13px] leading-relaxed text-slate-700">
-                        {shortText}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-[11px] text-slate-500">
-                    <span>
-                      {t("Оновлено:", "更新日:", "Updated:")}{" "}
-                      <span className="font-medium text-slate-700">
-                        {formatDate((job as any).updatedAt, langCode)}
-                      </span>
-                    </span>
-
-                    <div className="flex gap-2">
-                      <Link
-                        href={detailsHref}
-                        className="inline-flex items-center justify-center rounded-full bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
-                      >
-                        {t("Деталі", "詳細", "Details")}
+                return (
+                  <article
+                    key={job.id}
+                    className="group flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_12px_40px_rgba(15,23,42,0.10)] transition hover:-translate-y-[2px] hover:shadow-[0_18px_60px_rgba(15,23,42,0.16)]"
+                  >
+                    <div>
+                      <Link href={detailsHref} className="block">
+                        <h2 className="text-[15px] font-semibold leading-snug text-slate-900 underline-offset-4 group-hover:underline">
+                          {title}
+                        </h2>
                       </Link>
+
+                      <dl className="mt-2 space-y-0.5 text-[13px] text-slate-700">
+                        <div>
+                          <dt className="inline font-medium">{t("Компанія:", "企業名:", "Company:")} </dt>
+                          <dd className="inline">{company}</dd>
+                        </div>
+                        <div>
+                          <dt className="inline font-medium">{t("Локація:", "勤務地:", "Location:")} </dt>
+                          <dd className="inline">{location}</dd>
+                        </div>
+                      </dl>
+
+                      <div className="mt-3 flex flex-wrap gap-1.5 text-[11px]">
+                        <span className="inline-flex items-center rounded-full bg-slate-900 px-2.5 py-1 font-semibold text-white">
+                          JP: {jpLevelLabel}
+                        </span>
+
+                        {termLabel && (
+                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-800">
+                            {termLabel}
+                          </span>
+                        )}
+
+                        {typeof job.salaryFrom === "number" && (
+                          <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">
+                            ¥{Number(job.salaryFrom).toLocaleString("ja-JP")}
+                          </span>
+                        )}
+                      </div>
+
+                      {shortText && (
+                        <p className="mt-3 line-clamp-3 text-[13px] leading-relaxed text-slate-700">
+                          {shortText}
+                        </p>
+                      )}
                     </div>
-                  </div>
-                </article>
-              );
-            })}
+
+                    <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-[11px] text-slate-500">
+                      <span>
+                        {t("Оновлено:", "更新日:", "Updated:")}{" "}
+                        <span className="font-medium text-slate-700">
+                          {formatDate(job.updatedAt, langCode)}
+                        </span>
+                      </span>
+
+                      <div className="flex gap-2">
+                        <Link
+                          href={detailsHref}
+                          className="inline-flex items-center justify-center rounded-full bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
+                        >
+                          {t("Деталі", "詳細", "Details")}
+                        </Link>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
           </section>
         )}
       </section>
